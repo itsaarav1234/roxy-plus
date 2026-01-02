@@ -1,318 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music - Roxy+</title>
+    <title>Roxy+ Music</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
+        .music-container {
+            width: 95%;
             max-width: 1200px;
             margin: 0 auto;
-        }
-
-        .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            color: white;
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-
-        .nav {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .nav a {
-            color: white;
-            text-decoration: none;
-            padding: 8px 16px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
-
-        .nav a:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .nav a.active {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .card h2 {
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-        }
-
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .status-item {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
             padding: 20px;
+            color: #fff;
+            padding-bottom: 100px;
+        }
+
+        /* Layout Grid */
+        .music-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+        }
+
+        /* Player Card */
+        .player-card {
+            background: rgba(19, 19, 26, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            min-height: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Guild Badge */
+        .guild-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px 15px;
+            border-radius: 30px;
+        }
+
+        .guild-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .guild-info {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        .channel-name {
+            color: var(--neon-purple);
+            font-weight: 700;
+            margin-left: 5px;
+        }
+
+        /* Album Art */
+        .art-wrapper {
+            width: 280px;
+            height: 280px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .track-art {
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .track-art.playing {
+            transform: scale(1.05);
+            box-shadow: 0 15px 50px rgba(138, 43, 226, 0.4);
+        }
+
+        /* Track Info */
+        .track-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            max-width: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: linear-gradient(to right, #fff, #a29bfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .track-artist {
+            font-size: 1.1rem;
+            color: #888;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        /* Progress Bar */
+        .progress-wrapper {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .time-text {
+            font-size: 0.85rem;
+            color: #aaa;
+            font-family: monospace;
+            min-width: 45px;
+        }
+
+        .progress-container {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .status-item h3 {
-            font-size: 0.9em;
-            opacity: 0.9;
-            margin-bottom: 10px;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-purple), #a29bfe);
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.5s linear;
+            box-shadow: 0 0 10px var(--neon-purple);
         }
 
-        .status-item p {
-            font-size: 1.5em;
-            font-weight: bold;
+        /* Controls */
+        .btn-stop {
+            background: rgba(255, 71, 87, 0.1);
+            color: #ff4757;
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-stop:hover {
+            background: #ff4757;
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.4);
+        }
+
+        /* Queue Side */
+        .queue-card {
+            background: rgba(19, 19, 26, 0.8);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .queue-header {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
         }
 
         .queue-list {
-            max-height: 400px;
             overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+            max-height: 500px;
         }
 
         .queue-item {
-            background: #f5f5f5;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .queue-item.now-playing {
-            border-left-color: #764ba2;
-            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-        }
-
-        .queue-item h4 {
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .queue-item p {
-            color: #666;
-            font-size: 0.9em;
-        }
-
-        .controls {
             display: flex;
-            gap: 15px;
-            margin-top: 20px;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 8px;
+            transition: 0.2s;
         }
 
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s;
+        .queue-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .q-number {
+            color: #555;
+            font-size: 0.8rem;
+            font-weight: bold;
+            width: 20px;
+        }
+
+        .q-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .q-title {
+            font-size: 0.9rem;
             font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #ddd;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .q-author {
+            font-size: 0.8rem;
+            color: #777;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
-        }
-
+        /* Empty State */
         .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            z-index: 10;
         }
 
-        .empty-state i {
-            font-size: 3em;
-            margin-bottom: 15px;
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .empty-text {
+            font-size: 1.2rem;
+            color: #555;
         }
 
-        .loading {
-            animation: pulse 1.5s infinite;
+        @media(max-width: 900px) {
+            .music-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .queue-list {
+                max-height: 300px;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎵 Roxy+ Music</h1>
-            <div class="nav">
-                <a href="/">Home</a>
-                <a href="/afk">AFK</a>
-                <a href="/quest">Quest</a>
-                <a href="/music" class="active">Music</a>
-            </div>
+    <div class="music-container">
+
+        <div id="noMusicOverlay" class="empty-state" style="display: none;">
+            <div class="empty-icon">🎵</div>
+            <div class="empty-text">Nothing is playing right now.</div>
+            <div style="margin-top:10px; font-size:0.9rem; color:#444;">Join a voice channel and play some tunes!</div>
         </div>
 
-        <div class="status-grid">
-            <div class="status-item">
-                <h3>Bot Status</h3>
-                <p id="botStatus">Loading...</p>
+        <div class="music-grid" id="musicContent">
+
+            <!-- Main Player -->
+            <div class="player-card">
+                <div class="guild-badge">
+                    <img id="guildIcon" src="" class="guild-icon">
+                    <div class="guild-info">
+                        <span id="guildName">Guild</span> • <span id="channelName" class="channel-name">#General</span>
+                    </div>
+                </div>
+
+                <div class="art-wrapper">
+                    <img id="trackCover" src="" class="track-art playing">
+                </div>
+
+                <h1 id="trackTitle" class="track-title">Loading...</h1>
+                <div id="trackArtist" class="track-artist">Please wait</div>
+
+                <div class="progress-wrapper">
+                    <div id="currTime" class="time-text">0:00</div>
+                    <div class="progress-container">
+                        <div id="progressBar" class="progress-fill"></div>
+                    </div>
+                    <div id="totalTime" class="time-text">0:00</div>
+                </div>
+
+                <button class="btn-stop" onclick="stopMusic()">
+                    ⏹ Stop Music
+                </button>
             </div>
-            <div class="status-item">
-                <h3>Voice Channel</h3>
-                <p id="voiceChannel">Not Connected</p>
+
+            <!-- Queue -->
+            <div class="queue-card">
+                <div class="queue-header">
+                    <span>Up Next</span>
+                    <span id="queueCount"
+                        style="background:var(--neon-purple); padding:2px 8px; border-radius:6px; font-size:0.8rem;">0</span>
+                </div>
+                <div id="queueList" class="queue-list">
+                    <!-- Items -->
+                </div>
             </div>
-            <div class="status-item">
-                <h3>Songs in Queue</h3>
-                <p id="queueCount">0</p>
-            </div>
+
         </div>
 
-        <div class="card">
-            <h2>Now Playing</h2>
-            <div id="nowPlaying" class="empty-state">
-                <p>No music is currently playing</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <h2>Queue</h2>
-            <div id="queueList" class="empty-state">
-                <p>Queue is empty</p>
-            </div>
-            <div class="controls">
-                <button class="btn btn-danger" onclick="stopMusic()">⏹️ Stop Music</button>
-                <button class="btn btn-primary" onclick="refreshStatus()">🔄 Refresh</button>
-            </div>
-        </div>
     </div>
 
-    <script>
-        async function fetchMusicStatus() {
-            try {
-                const response = await fetch('/api/music/status');
-                const data = await response.json();
-                updateUI(data);
-            } catch (error) {
-                console.error('Error fetching music status:', error);
-            }
-        }
+    <%- include('partials/super_button') %>
 
-        function updateUI(data) {
-            // Update bot status
-            document.getElementById('botStatus').textContent = data.connected ? 'Connected' : 'Disconnected';
-            
-            // Update voice channel
-            document.getElementById('voiceChannel').textContent = data.voiceChannel || 'Not Connected';
-            
-            // Update queue count
-            document.getElementById('queueCount').textContent = data.queueCount || 0;
-            
-            // Update now playing
-            const nowPlayingDiv = document.getElementById('nowPlaying');
-            if (data.nowPlaying) {
-                nowPlayingDiv.innerHTML = `
-                    <div class="queue-item now-playing">
-                        <h4>🎵 ${data.nowPlaying.title}</h4>
-                        <p>👤 ${data.nowPlaying.author}</p>
-                    </div>
-                `;
-            } else {
-                nowPlayingDiv.innerHTML = '<div class="empty-state"><p>No music is currently playing</p></div>';
+        <script>
+            function formatTime(ms) {
+                const totalSeconds = Math.floor(ms / 1000);
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                return `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }
-            
-            // Update queue
-            const queueListDiv = document.getElementById('queueList');
-            if (data.queue && data.queue.length > 0) {
-                queueListDiv.innerHTML = '<div class="queue-list">' + 
-                    data.queue.map((song, index) => `
+
+            async function updateState() {
+                try {
+                    const res = await fetch('/api/music/status');
+                    const data = await res.json();
+
+                    if (!data.isPlaying || !data.nowPlaying) {
+                        document.getElementById('noMusicOverlay').style.display = 'flex';
+                        document.getElementById('musicContent').style.opacity = '0.1'; // Fade out bg
+                        return;
+                    }
+
+                    // Hide empty state
+                    document.getElementById('noMusicOverlay').style.display = 'none';
+                    document.getElementById('musicContent').style.opacity = '1';
+
+                    // Update Info
+                    document.getElementById('guildName').innerText = data.guildName;
+                    document.getElementById('channelName').innerText = data.channelName || 'Voice Channel';
+                    document.getElementById('guildIcon').src = data.guildIcon || 'https://cdn.discordapp.com/embed/avatars/0.png';
+
+                    document.getElementById('trackTitle').innerText = data.nowPlaying.title;
+                    document.getElementById('trackArtist').innerText = data.nowPlaying.author;
+                    document.getElementById('trackCover').src = data.nowPlaying.cover;
+
+                    // Progress
+                    const percent = Math.min(100, (data.position / data.duration) * 100);
+                    document.getElementById('progressBar').style.width = percent + '%';
+                    document.getElementById('currTime').innerText = formatTime(data.position);
+                    document.getElementById('totalTime').innerText = formatTime(data.duration);
+
+                    // Queue
+                    document.getElementById('queueCount').innerText = data.queueCount;
+                    const list = document.getElementById('queueList');
+                    list.innerHTML = '';
+
+                    if (data.queue.length === 0) {
+                        list.innerHTML = '<div style="text-align:center; color:#555; margin-top:50px;">Queue is empty</div>';
+                    } else {
+                        data.queue.forEach((song, i) => {
+                            list.innerHTML += `
                         <div class="queue-item">
-                            <h4>${index + 1}. ${song.title}</h4>
-                            <p>👤 ${song.author}</p>
-                        </div>
-                    `).join('') + 
-                    '</div>';
-            } else {
-                queueListDiv.innerHTML = '<div class="empty-state"><p>Queue is empty</p></div>';
-            }
-        }
+                            <div class="q-number">${i + 1}</div>
+                            <div class="q-info">
+                                <div class="q-title">${song.title}</div>
+                                <div class="q-author">${song.author}</div>
+                            </div>
+                        </div>`;
+                        });
+                    }
 
-        async function stopMusic() {
-            if (!confirm('Are you sure you want to stop the music and clear the queue?')) {
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/music/stop', { method: 'POST' });
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert('Music stopped successfully');
-                    fetchMusicStatus();
-                } else {
-                    alert('Error: ' + (result.message || 'Failed to stop music'));
+                } catch (e) {
+                    console.error(e);
                 }
-            } catch (error) {
-                console.error('Error stopping music:', error);
-                alert('Error stopping music');
             }
-        }
 
-        function refreshStatus() {
-            fetchMusicStatus();
-        }
+            async function stopMusic() {
+                if (!confirm('Stop playback and disconnect?')) return;
+                await fetch('/api/music/stop', { method: 'POST' });
+                updateState(); // Refresh immediately
+            }
 
-        // Initial load
-        fetchMusicStatus();
-        
-        // Auto-refresh every 5 seconds
-        setInterval(fetchMusicStatus, 5000);
-    </script>
+            // Start polling
+            setInterval(updateState, 2000);
+            updateState();
+        </script>
 </body>
+
 </html>

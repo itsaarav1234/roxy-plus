@@ -155,6 +155,14 @@ if (client.lavalink) {
             }
         }
     });
+
+    client.lavalink.on('playerUpdate', (packet) => {
+        const queue = queueManager.get(packet.guildId);
+        if (queue && packet.state) {
+            queue.position = packet.state.position;
+            queue.lastUpdate = Date.now();
+        }
+    });
 }
 
 // AFK & Logging Logic

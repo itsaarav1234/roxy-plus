@@ -212,26 +212,68 @@ module.exports = (client) => {
 
         let musicData = {
             connected: !!client.lavalink,
-            voiceChannel: null,
+            isPlaying: false,
+            guildName: 'No Guild',
+            guildIcon: null,
+            channelName: '',
             nowPlaying: null,
+            position: 0,
+            duration: 0,
             queue: [],
             queueCount: 0
         };
 
-        // Get first active queue (for simplicity, you can enhance this later)
+        // Get first active queue
         for (const [guildId, queue] of queues) {
             if (queue.nowPlaying) {
-                musicData.voiceChannel = `Guild: ${guildId}`;
+                const guild = client.guilds.cache.get(guildId);
+                const voiceState = client.voiceStates ? client.voiceStates[guildId] : null; // Custom voiceStates storage
+                // OR check client.guilds.cache.get(guildId).me.voice.channel
+
+                musicData.isPlaying = true;
+                musicData.guildName = guild ? guild.name : `Guild ${guildId}`;
+                musicData.guildIcon = guild ? guild.iconURL({ dynamic: true, size: 128 }) : null;
+
+                // Try to find channel name
+                // queue doesn't store channelId? Lavalink might. 
+                // We'll leave channelName generic or try to find where bot is
+                if (guild && guild.me && guild.me.voice && guild.me.voice.channel) {
+                    musicData.channelName = guild.me.voice.channel.name;
+                }
+
+                const info = queue.nowPlaying.info;
+                let cover = 'https://i.imgur.com/2ce2t5e.png'; // Fallback
+
+                if (info.sourceName === 'youtube' || info.uri.includes('youtube')) {
+                    cover = `https://img.youtube.com/vi/${info.identifier}/maxresdefault.jpg`;
+                } else if (info.artworkUrl) {
+                    cover = info.artworkUrl;
+                }
+
                 musicData.nowPlaying = {
-                    title: queue.nowPlaying.info.title,
-                    author: queue.nowPlaying.info.author
+                    title: info.title,
+                    author: info.author,
+                    cover: cover,
+                    url: info.uri
                 };
+
+                musicData.duration = info.length;
+                musicData.position = queue.position || 0;
+
+                // Adjust position estimate
+                if (queue.lastUpdate && !queue.paused) {
+                    const diff = Date.now() - queue.lastUpdate;
+                    musicData.position += diff;
+                    if (musicData.position > musicData.duration) musicData.position = musicData.duration;
+                }
+
                 musicData.queue = queue.songs.map(song => ({
                     title: song.info.title,
-                    author: song.info.author
+                    author: song.info.author,
+                    uri: song.info.uri
                 }));
                 musicData.queueCount = queue.songs.length;
-                break; // Only show first active queue
+                break;
             }
         }
 
