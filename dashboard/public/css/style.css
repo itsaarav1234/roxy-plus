@@ -54,6 +54,137 @@ body::before {
     margin: 20px 0;
     padding-bottom: 50px;
     /* Space for Super Button on mobile if needed */
+    animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(50px);
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* PC Specific Enhancements (HOME PAGE ONLY) */
+@media (min-width: 1024px) {
+
+    /* Use a specific class for the home page layout to avoid breaking other pages */
+    .home-container {
+        width: 1000px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: left;
+        padding: 4rem;
+        gap: 4rem;
+        /* Inherit base dashboard styling */
+        background: var(--card-bg);
+        border-radius: 20px;
+        border: 1px solid rgba(176, 38, 255, 0.2);
+        box-shadow: var(--primary-glow);
+        backdrop-filter: blur(10px);
+    }
+
+
+    .left-section {
+        flex: 1;
+        max-width: 450px;
+    }
+
+    .right-section {
+        flex: 1;
+        flex-direction: column;
+        /* PC layout: column inside right section to stack image and text */
+        text-align: center;
+    }
+
+    .brand-image {
+        width: 100%;
+        max-width: 400px;
+        border-radius: 20px;
+        box-shadow: 0 0 30px rgba(176, 38, 255, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .brand-image:hover {
+        transform: scale(1.02);
+    }
+
+    .profile-section {
+        display: block;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    /* Adjust form for side layout */
+    .settings-form {
+        width: 100%;
+    }
+}
+
+/* Hide brand image on small screens */
+/* Mobile Brand Image Styles */
+.brand-image {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
+    margin-top: 2rem;
+    display: block;
+    /* Visible on mobile now */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Footer Creator Text */
+.creator-text {
+    margin-top: 15px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+
+    /* Gradient Text */
+    background: linear-gradient(90deg, #b026ff, #0078ff, #b026ff);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    /* Glow Effect */
+    text-shadow: 0 0 30px rgba(176, 38, 255, 0.4);
+
+    animation: gradientMove 3s linear infinite, pulseGlow 3s infinite alternate;
+}
+
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes pulseGlow {
+    from {
+        text-shadow: 0 0 20px rgba(176, 38, 255, 0.4);
+    }
+
+    to {
+        text-shadow: 0 0 35px rgba(176, 38, 255, 0.8);
+    }
+}
+
+@media (min-width: 1024px) {
+    .brand-image {
+        display: block;
+        /* Redundant but keeps consistency */
+        margin-top: 0;
+    }
 }
 
 .profile-section {

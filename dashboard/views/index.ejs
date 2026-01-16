@@ -58,74 +58,88 @@
 
 <body>
 
-    <div class="dashboard-container">
+    <div class="dashboard-container home-container">
         <!-- Logout Button Inside Container -->
         <a href="/logout" class="logout-btn">
             <i class="fas fa-sign-out-alt"></i> <span class="logout-text">Logout</span>
         </a>
 
-        <div class="profile-section">
-            <% let strokeClass='stroke-offline' ; if(status==='online' ) strokeClass='stroke-online' ;
-                if(status==='idle' ) strokeClass='stroke-idle' ; if(status==='dnd' ) strokeClass='stroke-dnd' ; %>
+        <div class="left-section">
+            <div class="profile-section">
+                <% let strokeClass='stroke-offline' ; if(status==='online' ) strokeClass='stroke-online' ;
+                    if(status==='idle' ) strokeClass='stroke-idle' ; if(status==='dnd' ) strokeClass='stroke-dnd' ; %>
 
-                <div class="avatar-wrapper <%= strokeClass %>">
-                    <img src="<%= user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) %>" alt="Avatar"
-                        class="avatar">
-                </div>
-        </div>
-
-        <h1 class="username">
-            <%= user.username %>
-                <span class="discriminator">#<%= user.discriminator %></span>
-        </h1>
-
-        <div class="uptime-section">
-            <div class="title">System Uptime</div>
-            <div class="uptime-badge">
-                Loading...
+                    <div class="avatar-wrapper <%= strokeClass %>">
+                        <img src="<%= user.displayAvatarURL({ format: 'png', dynamic: true, size: 512 }) %>"
+                            alt="Avatar" class="avatar">
+                    </div>
             </div>
-        </div>
 
-        <hr class="divider">
+            <div style="text-align: center;">
+                <h1 class="username">
+                    <%= user.username %>
+                        <span class="discriminator">#<%= user.discriminator %></span>
+                </h1>
 
-        <form id="statusForm" action="/update-status" method="POST" class="settings-form">
-            <div class="form-group">
-                <label>Status Mode</label>
-                <div class="status-options">
-                    <label class="radio-label">
-                        <input type="radio" name="status" value="online" <%=status==='online' ? 'checked' : '' %>>
-                        <span class="radio-btn online">Online</span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="status" value="idle" <%=status==='idle' ? 'checked' : '' %>>
-                        <span class="radio-btn idle">Idle</span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="status" value="dnd" <%=status==='dnd' ? 'checked' : '' %>>
-                        <span class="radio-btn dnd">DND</span>
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="status" value="invisible" <%=status==='invisible' ? 'checked' : '' %>>
-                        <span class="radio-btn offline">Invisible</span>
-                    </label>
+                <div class="uptime-section">
+                    <div class="title">System Uptime</div>
+                    <div class="uptime-badge">
+                        Loading...
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>Custom Message</label>
-                <input type="text" name="custom_status" class="input-field" placeholder="Playing with code..."
-                    value="<%= currentActivity %>">
-            </div>
+            <hr class="divider">
 
-            <div class="form-group">
-                <label>Emoji (Nitro Support)</label>
-                <input type="text" name="emoji" class="input-field" placeholder="🍕 or <:name:id>"
-                    value="<%= currentEmoji %>">
-                <small class="hint">Paste emoji or use ID format for custom ones</small>
-            </div>
+            <form id="statusForm" action="/update-status" method="POST" class="settings-form">
+                <div class="form-group">
+                    <label>Status Mode</label>
+                    <div class="status-options">
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="online" <%=status==='online' ? 'checked' : '' %>>
+                            <span class="radio-btn online">Online</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="idle" <%=status==='idle' ? 'checked' : '' %>>
+                            <span class="radio-btn idle">Idle</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="dnd" <%=status==='dnd' ? 'checked' : '' %>>
+                            <span class="radio-btn dnd">DND</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="status" value="invisible" <%=status==='invisible' ? 'checked' : ''
+                                %>>
+                            <span class="radio-btn offline">Invisible</span>
+                        </label>
+                    </div>
+                </div>
 
-            <button type="submit" id="updateStatusBtn" class="save-btn">Update Status</button>
-        </form>
+                <div class="form-group">
+                    <label>Custom Message</label>
+                    <input type="text" name="custom_status" class="input-field" placeholder="Playing with code..."
+                        value="<%= currentActivity %>">
+                </div>
+
+                <div class="form-group">
+                    <label>Emoji (Nitro Support)</label>
+                    <input type="text" name="emoji" class="input-field" placeholder="🍕 or <:name:id>"
+                        value="<%= currentEmoji %>">
+                    <small class="hint">Paste emoji or use ID format for custom ones</small>
+                </div>
+
+                <button type="submit" id="updateStatusBtn" class="save-btn">Update Status</button>
+            </form>
+        </div>
+
+        <div class="right-section">
+            <img src="https://lanyard.cnrad.dev/api/1123856956780728411?bg=000000&borderRadius=20px&idleMessage=Sleeping...&theme=dark&showDisplayName=true"
+                class="brand-image" id="brandImage" alt="Brand Status">
+
+            <div class="creator-text">
+                made with &lt;3 by it's manish
+            </div>
+        </div>
 
     </div>
 
@@ -193,6 +207,15 @@
                 btn.disabled = false;
             }
         });
+        // Auto-refresh brand image every 15 seconds
+        setInterval(() => {
+            const img = document.getElementById('brandImage');
+            if (img) {
+                // Add timestamp to force reload
+                const currentSrc = img.src.split('&t=')[0];
+                img.src = `${currentSrc}&t=${Date.now()}`;
+            }
+        }, 15000);
     </script>
     <%- include('partials/super_button') %>
 </body>
