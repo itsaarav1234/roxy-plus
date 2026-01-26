@@ -95,6 +95,10 @@ client.on('ready', () => {
     const mirrorManager = require('./commands/mirrorManager');
     mirrorManager.initialize(client);
 
+    // Initialize Waifu/Fun System
+    const waifuManager = require('./commands/waifuManager');
+    waifuManager.initialize(client);
+
     // Start Dashboard
     dashboard(client);
 });
