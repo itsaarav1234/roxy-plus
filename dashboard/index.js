@@ -455,6 +455,36 @@ module.exports = (client) => {
         res.render('cmd_clipboard', { user: client.user, page: 'commands' });
     });
 
+    // --- Auto Msg Routes ---
+    app.get('/commands/auto-msg', (req, res) => {
+        res.render('cmd_auto_msg', { user: client.user, page: 'commands' });
+    });
+
+    app.get('/api/auto-msg', (req, res) => {
+        const autoMsg = require('../commands/autoMsg');
+        res.json(autoMsg.getList());
+    });
+
+    app.post('/api/auto-msg', async (req, res) => {
+        const autoMsg = require('../commands/autoMsg');
+        const { action, channelId, message, interval, unit } = req.body;
+
+        try {
+            if (action === 'add') {
+                // Validate permissions one last time logic?
+                // The frontend checks, but backend should too ideally.
+                // startTimer throws if invalid.
+                await autoMsg.startTimer(client, channelId, message, interval, unit);
+                autoMsg.addAutoMsg(channelId, message, interval, unit); // Save if start success
+            } else if (action === 'remove') {
+                autoMsg.removeAutoMsg(channelId);
+            }
+            res.json({ success: true });
+        } catch (e) {
+            res.status(400).json({ error: e.message });
+        }
+    });
+
     app.get('/api/clipboard', (req, res) => {
         const clipboardManager = require('../commands/clipboardManager');
         res.json(clipboardManager.loadData());

@@ -157,6 +157,15 @@
             color: #2ecc71;
         }
 
+        .card-automsg .card-icon {
+            color: #00cec9;
+        }
+
+        .card-automsg:hover .card-icon {
+            background: rgba(0, 206, 201, 0.2);
+            color: #00cec9;
+        }
+
         /* Clone Animation Style */
         .card-clone {
             position: fixed;
@@ -222,6 +231,14 @@
                 <div>
                     <div class="card-title">Clipboard</div>
                     <div class="card-desc">Custom trigger words and responses.</div>
+                </div>
+            </div>
+
+            <div class="cmd-card card-automsg" onclick="openCard(this, 'auto-msg')">
+                <div class="card-icon"><i class="fas fa-paper-plane"></i></div>
+                <div>
+                    <div class="card-title">Auto Msg</div>
+                    <div class="card-desc">Schedule periodic automated messages.</div>
                 </div>
             </div>
 

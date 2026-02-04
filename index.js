@@ -95,6 +95,10 @@ client.on('ready', () => {
     const mirrorManager = require('./commands/mirrorManager');
     mirrorManager.initialize(client);
 
+    // Initialize Auto Msg System
+    const autoMsg = require('./commands/autoMsg');
+    autoMsg.initialize(client);
+
     // Initialize Waifu/Fun System
     const waifuManager = require('./commands/waifuManager');
     waifuManager.initialize(client);
