@@ -19,7 +19,7 @@ const DEFAULT_CONFIG = {
     enabledChannels: [],
     dmUsers: [],
     freeWillChannels: [],
-    aiName: "Roxy",
+    aiName: "Aarav",
     backstory: "You are Roxy, a helpful and witty AI assistant.",
     personality: "Friendly, helpful, and sometimes sarcastic.",
     rules: "Keep responses concise. Do not ping @everyone.",
