@@ -12,7 +12,7 @@ class Queue {
             songs: [],
             history: [],
             nowPlaying: null,
-            volume: 1000,
+            volume: 100,
             filters: {},
             textChannel: null,
         };
