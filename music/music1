@@ -61,7 +61,7 @@ function playSong(guildId, filePath, client) {
         const resource = createAudioResource(filePath, {
             inlineVolume: true
         });
-        resource.volume.setVolume(1); // Set volume to 100%
+        resource.volume.setVolume(1); // Set volume to 200%
         player.play(resource);
 
         // Store client reference for status updates
