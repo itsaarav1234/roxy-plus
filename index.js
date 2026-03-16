@@ -121,6 +121,9 @@ if (client.lavalink) {
         const guildId = packet.guild_id;
         if (!voiceStates[guildId]) voiceStates[guildId] = {};
         voiceStates[guildId].sessionId = packet.session_id;
+        if (packet.channel_id) {
+            voiceStates[guildId].channelId = packet.channel_id;
+        }
         console.log(`[Voice] State update for guild ${guildId}`);
     });
 
@@ -223,9 +226,118 @@ setInterval(() => {
     }
 }, 3600000);
 
+// --- WELCOMER SYSTEM ---
+client.on('guildMemberAdd', async member => {
+    try {
+        const welcomerManager = require('./commands/welcomerManager');
+        const setup = welcomerManager.getSetup(member.guild.id);
+
+        if (setup && setup.channelId) {
+            const channel = member.guild.channels.cache.get(setup.channelId);
+            if (channel) {
+                const { createCanvas, loadImage } = require('canvas');
+                const fs = require('fs');
+                const path = require('path');
+
+                // Find custom wallpaper in data folder
+                const dataDir = path.join(__dirname, 'data');
+                const extList = ['.png', '.jpg', '.jpeg', '.webp'];
+                let bgPath = path.join(__dirname, 'dashboard', 'public', 'welcome.jpg'); // Fallback default
+
+                for (const ext of extList) {
+                    const checkPath = path.join(dataDir, `welcome${ext}`);
+                    if (fs.existsSync(checkPath)) {
+                        bgPath = checkPath;
+                        break;
+                    }
+                }
+
+                // Create Canvas (size: 1024x450)
+                const canvas = createCanvas(1024, 450);
+                const ctx = canvas.getContext('2d');
+
+                // Draw background
+                const background = await loadImage(bgPath);
+                ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+                // Draw Semi-Transparent Dark Overlay for text readability
+                ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Text Sanitization
+                const cleanGuild = member.guild.name.replace(/[^\x00-\x7F]/g, "").trim() || "Server";
+                let cleanUser = member.user.username.replace(/[^\x00-\x7F]/g, "").trim() || "User";
+                if (member.user.discriminator && member.user.discriminator !== '0') {
+                    cleanUser += `#${member.user.discriminator}`;
+                }
+
+                // Set Color based on user setup or default white
+                let userColor = (setup.textcolor && setup.textcolor !== 'ffffff') ? `#${setup.textcolor}` : '#ffffff';
+                if (!userColor.startsWith('#')) userColor = '#' + userColor;
+
+                ctx.textAlign = 'center';
+
+                // "WELCOME TO"
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px Arial';
+                ctx.fillText(`WELCOME TO ${cleanGuild.toUpperCase()}`, canvas.width / 2, 290);
+
+                // Username
+                ctx.font = 'bold 50px Arial';
+                ctx.fillStyle = userColor;
+                ctx.fillText(cleanUser, canvas.width / 2, 350);
+
+                // Member count
+                ctx.font = '24px Arial';
+                ctx.fillStyle = '#cccccc';
+                ctx.fillText(`Member #${member.guild.memberCount}`, canvas.width / 2, 395);
+
+                // Draw Avatar Circular Cutout
+                const userAvatar = member.user.displayAvatarURL({ format: 'png', size: 256 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
+                const avatar = await loadImage(userAvatar);
+
+                const arcX = canvas.width / 2;
+                const arcY = 140;
+                const arcRadius = 90;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(arcX, arcY, arcRadius, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(avatar, arcX - arcRadius, arcY - arcRadius, arcRadius * 2, arcRadius * 2);
+                ctx.restore();
+
+                // Add Avatar Border
+                ctx.beginPath();
+                ctx.arc(arcX, arcY, arcRadius, 0, Math.PI * 2, true);
+                ctx.closePath();
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = userColor;
+                ctx.stroke();
+
+                const buffer = canvas.toBuffer('image/png');
+
+                await channel.send({
+                    files: [{
+                        attachment: buffer,
+                        name: 'welcome.png'
+                    }]
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Welcomer Canvas Event Error:', e);
+    }
+});
+
 client.on('messageCreate', async (message) => {
     try {
         if (!message.author) return;
+
+        // --- MIMIC SYSTEM ---
+        const mimicManager = require('./commands/mimicManager');
+        mimicManager.handle(message, client);
 
         // --- AFK & LOGGING SYSTEM ---
         const mentionsMe = message.mentions.users.has(client.user.id);
@@ -319,6 +431,11 @@ client.on('messageCreate', async (message) => {
             const igManager = require('./commands/igManager');
             const igHandled = await igManager.handle(message);
             if (igHandled) return;
+
+            // YouTube Manager
+            const ytManager = require('./commands/ytManager');
+            const ytHandled = await ytManager.handle(message);
+            if (ytHandled) return;
 
             const calculator = require('./commands/calculator');
             // If calculator handled it, return to prevent other command processing (optional, but safe)

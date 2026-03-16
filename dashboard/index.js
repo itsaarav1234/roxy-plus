@@ -427,8 +427,9 @@ module.exports = (client) => {
             res.json({
                 id: channel.id,
                 name: channel.name,
+                guildId: channel.guild?.id,
                 guildName: channel.guild?.name || 'Direct Message',
-                guildIcon: channel.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png' // Added guildIcon
+                guildIcon: channel.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png'
             });
         } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -727,6 +728,55 @@ module.exports = (client) => {
                 icon: channel.guild?.iconURL({ dynamic: true }) || channel.recipient?.displayAvatarURL({ dynamic: true })
             });
         } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+
+    app.get('/commands/welcomer', (req, res) => {
+        res.render('cmd_welcomer', { user: client.user, page: 'commands' });
+    });
+
+    app.get('/api/welcomer', async (req, res) => {
+        const welcomerManager = require('../commands/welcomerManager');
+        const data = welcomerManager.loadData();
+        const setups = data.welcomeSetups || {};
+
+        // Enrich server info
+        const enrichedList = [];
+        for (const [guildId, val] of Object.entries(setups)) {
+            const guild = client.guilds.cache.get(guildId);
+            let channelName = "Unknown Channel";
+            if (guild) {
+                const c = guild.channels.cache.get(val.channelId);
+                if (c) channelName = c.name;
+            }
+
+            enrichedList.push({
+                guildId,
+                guildName: guild ? guild.name : `Server ${guildId}`,
+                icon: guild && guild.iconURL() ? guild.iconURL({ dynamic: true }) : 'https://cdn.discordapp.com/embed/avatars/0.png',
+                channelId: val.channelId,
+                channelName: channelName,
+                template: val.template,
+                background: val.background,
+                textcolor: val.textcolor
+            });
+        }
+        res.json({ setups: enrichedList });
+    });
+
+    app.post('/api/welcomer', (req, res) => {
+        const welcomerManager = require('../commands/welcomerManager');
+        const { action, guildId, channelId, template, background, textcolor } = req.body;
+
+        try {
+            if (action === 'add') {
+                welcomerManager.addSetup(guildId, channelId, template, background, textcolor);
+            } else if (action === 'remove') {
+                welcomerManager.removeSetup(guildId);
+            }
+            res.json({ success: true });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
     });
 
     app.get('/commands/:category', (req, res) => {

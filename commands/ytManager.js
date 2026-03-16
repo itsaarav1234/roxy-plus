@@ -1,52 +1,46 @@
 const { Message } = require('discord.js-selfbot-v13');
 
-function extractReelId(link) {
+function extractVideoId(link) {
     try {
         const patterns = [
-            /instagram\.com\/reels?\/([A-Za-z0-9_-]+)/,
-            /instagram\.com\/reel\/([A-Za-z0-9_-]+)/,
-            /instagram\.com\/p\/([A-Za-z0-9_-]+)/
+            /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i,
+            /youtube\.com\/shorts\/([^"&?\/\s]{11})/i
         ];
 
         for (const pattern of patterns) {
             const match = link.match(pattern);
             if (match && match[1]) {
-
-                return match[1].split('?')[0].split('/')[0];
+                return match[1];
             }
         }
         return null;
     } catch (error) {
-        console.error('[IG Manager] Extract Error:', error);
+        console.error('[YT Manager] Extract Error:', error);
         return null;
     }
 }
 
 /**
-
  * @param {Message} message 
  */
 async function handle(message) {
     const prefix = process.env.PREFIX || '!';
     if (message.content.startsWith(prefix)) return false;
 
-    if (!message.content.includes('instagram.com')) return false;
+    if (!message.content.includes('youtube.com') && !message.content.includes('youtu.be')) return false;
 
+    if (message.content.includes('koutube.com')) return false;
 
-    if (message.content.includes('kkinstagram.com') || message.content.includes('ddinstagram.com')) return false;
+    const videoId = extractVideoId(message.content);
 
-
-    const reelId = extractReelId(message.content);
-
-    if (reelId) {
-
-        const newLink = `[+](https://kkinstagram.com/reels/${reelId})`;
+    if (videoId) {
+        const newLink = `[+](https://koutube.com/${videoId})`;
 
         try {
             await message.channel.send(newLink);
             return true;
         } catch (e) {
-
+            console.error('[YT Manager] Send Error:', e);
         }
     }
 

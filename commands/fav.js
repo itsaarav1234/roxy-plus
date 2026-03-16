@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { joinVoiceChannel } = require('@discordjs/voice');
 
 const favsFile = path.join(__dirname, '../data/playlists.json');
 
@@ -23,8 +24,8 @@ module.exports = {
     name: 'fav',
     aliases: ['favorite', 'favourite'],
     category: 'Music',
-    description: 'Manage favorites: `fav`, `fav list`, `fav remove`',
-    usage: 'fav [list|remove]',
+    description: 'Manage favorites: `fav`, `fav list`, `fav remove`, `fav load`',
+    usage: 'fav [list|remove|load]',
     async execute(message, args, client) {
         const data = loadFavs();
         const action = args[0] ? args[0].toLowerCase() : 'add';
@@ -101,8 +102,85 @@ module.exports = {
                     });
                     break;
 
+                case 'load':
+                case 'play':
+                    if (data.fav.length === 0) {
+                        return message.channel.send('Your favorite list is empty.');
+                    }
+
+                    const vc = message.member?.voice?.channel;
+                    if (!vc) return message.channel.send('```You need to be in a voice channel```');
+
+                    if (message.deletable) message.delete().catch(() => { });
+
+                    try {
+                        joinVoiceChannel({
+                            channelId: vc.id,
+                            guildId: vc.guild.id,
+                            adapterCreator: vc.guild.voiceAdapterCreator,
+                            selfDeaf: false,
+                        });
+
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+
+                        let loadQueue = client.queueManager.get(message.guild.id);
+                        if (!loadQueue) {
+                            loadQueue = client.queueManager.create(message.guild.id);
+                        }
+
+                        const voiceState = client.lavalinkVoiceStates[message.guild.id];
+                        if (!voiceState || !voiceState.token) {
+                            return message.channel.send('```Bot not connected to voice```');
+                        }
+
+                        let added = 0;
+                        const loadingMsg = await message.channel.send(`\`\`\`Loading ${data.fav.length} favorite tracks...\`\`\``);
+
+                        for (const song of data.fav) {
+                            try {
+                                const lRes = await client.lavalink.loadTracks(song.uri);
+                                let trackToLoad;
+
+                                if (lRes.loadType === 'track') trackToLoad = lRes.data;
+                                else if (lRes.loadType === 'playlist') trackToLoad = lRes.data.tracks[0];
+                                else if (lRes.loadType === 'search') trackToLoad = lRes.data[0];
+
+                                if (trackToLoad) {
+                                    client.queueManager.addSong(message.guild.id, trackToLoad);
+                                    added++;
+                                }
+                            } catch (e) {
+                                console.error('Error loading fav track:', e);
+                            }
+                        }
+
+                        if (added > 0 && !loadQueue.nowPlaying) {
+                            const nextSong = client.queueManager.getNext(message.guild.id);
+                            if (nextSong) {
+                                loadQueue.nowPlaying = nextSong;
+                                await client.lavalink.updatePlayer(message.guild.id, nextSong, voiceState, {
+                                    volume: loadQueue.volume,
+                                    filters: loadQueue.filters
+                                });
+                                loadQueue.textChannel = message.channel;
+                            }
+                        }
+
+                        if (loadQueue && loadQueue.autoplay && loadQueue.songs.length < 5) {
+                            await client.queueManager.fillAutoplayQueue(client, message.guild.id);
+                        }
+
+                        if (loadingMsg.deletable) loadingMsg.delete().catch(() => { });
+                        message.channel.send(`\`\`\`loaded ${added} favorite tracks into the queue!\`\`\``);
+
+                    } catch (err) {
+                        console.error('Load Error:', err);
+                        message.channel.send(`\`\`\`Error loading favs\`\`\``);
+                    }
+                    break;
+
                 default:
-                    message.channel.send('Use `!fav` (adds playing song), `!fav list`, or `!fav remove`.');
+                    message.channel.send('Use `!fav` (adds playing song), `!fav list`, `!fav remove`, or `!fav load`.');
                     break;
             }
         } catch (error) {

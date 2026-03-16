@@ -1,7 +1,7 @@
 const { joinVoiceChannel } = require('@discordjs/voice');
 
 function createIdentifier(query) {
-    return /^(https?:\/\/|www\.)/i.test(query) ? query : `ytmsearch:${query}`;
+    return /^(https?:\/\/|www\.)/i.test(query) ? query : `ytsearch:${query}`;
 }
 
 function formatDuration(ms) {
