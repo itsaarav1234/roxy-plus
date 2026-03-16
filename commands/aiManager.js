@@ -151,6 +151,9 @@ async function generateReply(userId, userContent) {
 
         console.log(`\n[AI] Reply complete (Model: ${config.modelType}).`);
 
+        // Strip out <think> blocks if the model returns them in the main content chunk
+        fullContent = fullContent.replace(/<think>[\s\S]*?(?:<\/think>|$)\s*/gi, '');
+
         // Save to history
         if (fullContent.trim()) {
             await addHistory(userId, userContent, fullContent);
