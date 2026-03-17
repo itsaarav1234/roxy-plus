@@ -468,9 +468,11 @@ module.exports = (client) => {
         });
         const enrichedGroups = [...enrichedGroupsAlways, ...enrichedGroupsMention];
 
-        const enrichedFreeWill = (data.freeWillChannels || []).map(id => {
+        const enrichedFreeWill = (data.freeWillChannels || []).map(item => {
+            const id = typeof item === 'object' ? item.id : item;
+            const delay = typeof item === 'object' ? item.delay : 0;
             const c = client.channels.cache.get(id);
-            return { id, name: c ? c.name : 'Unknown Channel', guildName: c?.guild?.name || 'Unknown', guildIcon: c?.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png' };
+            return { id, delay, name: c ? c.name : 'Unknown Channel', guildName: c?.guild?.name || 'Unknown', guildIcon: c?.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png' };
         });
         const enrichedUsers = (data.dmUsers || []).map(id => {
             const u = client.users.cache.get(id); // Users might not be cached if not seen?

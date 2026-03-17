@@ -505,8 +505,11 @@
                     <span class="warning-text">⚠ Warning: Can be spammy.</span>
                 </p>
 
-                <input type="text" id="inputFree" class="input-field" placeholder="Paste Channel ID..."
-                    oninput="onWhitelistInput('free')">
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <input type="text" id="inputFree" class="input-field" placeholder="Paste Channel ID..."
+                        oninput="onWhitelistInput('free')" style="flex: 1;">
+                    <input type="number" id="inputFreeDelay" class="input-field" placeholder="Delay (seconds)" min="0" style="width: 140px;">
+                </div>
                 <div id="previewFree" style="display:none;"></div>
                 <button id="btnAddFree" class="btn-add" disabled onclick="confirmAdd('free')">Add Channel</button>
 
@@ -604,6 +607,9 @@
                     if (type === 'channel' || type === 'free') {
                         name = '#' + name;
                         sub = `in ${item.guildName}`;
+                        if (type === 'free' && item.delay > 0) {
+                            sub += ` <span style="background:#8a2be2; color:#fff; padding:2px 6px; border-radius:4px; font-size:0.7em;">${item.delay}s DELAY</span>`;
+                        }
                     }
                     if (type === 'group') {
                         sub = 'Group Chat';
@@ -732,15 +738,24 @@
                     document.getElementById('chkGroupMention').checked = false;
                 }
                 if (type === 'free') {
-                    if (!currentData.freeWillChannels) currentData.freeWillChannels = [];
-                    addId(currentData.freeWillChannels, val);
-                }
+                        let delayVal = parseInt(document.getElementById('inputFreeDelay').value) || 0;
+                        if (!currentData.freeWillChannels) currentData.freeWillChannels = [];
+                        
+                        // Check if already exists and update or add new
+                        const existingIndex = currentData.freeWillChannels.findIndex(x => typeof x === 'object' ? x.id === val : x === val);
+                        if (existingIndex >= 0) {
+                            currentData.freeWillChannels[existingIndex] = { id: val, delay: delayVal };
+                        } else {
+                            currentData.freeWillChannels.push({ id: val, delay: delayVal });
+                        }
+                    }
 
                 await saveData();
                 await loadData();
 
                 // Reset UI
                 document.getElementById(inputId).value = '';
+                if (type === 'free') document.getElementById('inputFreeDelay').value = '';
                 document.getElementById(previewId).style.display = 'none';
                 document.getElementById(previewId).innerHTML = '';
                 document.getElementById(btnId).disabled = true;
@@ -759,7 +774,7 @@
                     if (currentData.enabledGroups) currentData.enabledGroups = currentData.enabledGroups.filter(x => x !== id);
                     if (currentData.enabledGroupsMention) currentData.enabledGroupsMention = currentData.enabledGroupsMention.filter(x => x !== id);
                 }
-                if (type === 'free') currentData.freeWillChannels = currentData.freeWillChannels.filter(x => x !== id);
+                if (type === 'free') currentData.freeWillChannels = currentData.freeWillChannels.filter(x => typeof x === 'object' ? x.id !== id : x !== id);
                 await saveData();
                 await loadData();
             }

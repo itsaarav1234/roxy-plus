@@ -196,6 +196,7 @@ function initialize(client) {
 
             // Flags
             let shouldReply = false;
+            let freeWillDelay = 0;
 
             // 1. DM Logic (or Group DM)
             if (!guildId) {
@@ -217,8 +218,12 @@ function initialize(client) {
                 // Server Logic
 
                 // Check Free Will
-                if (config.freeWillChannels && config.freeWillChannels.includes(channelId)) {
-                    shouldReply = true;
+                if (config.freeWillChannels) {
+                    const fwItem = config.freeWillChannels.find(x => typeof x === 'object' ? x.id === channelId : x === channelId);
+                    if (fwItem) {
+                        shouldReply = true;
+                        freeWillDelay = typeof fwItem === 'object' ? (fwItem.delay || 0) : 0;
+                    }
                 }
                 // Check Mention/Reply triggers
                 else {
@@ -244,11 +249,20 @@ function initialize(client) {
             }
 
             if (shouldReply) {
+                const startTime = Date.now();
                 message.channel.sendTyping().catch(() => { });
                 // Generate
                 // Prepend username for context
                 const effectiveContent = `(User: ${message.author.username}) ${content}`;
                 const reply = await generateReply(authorId, effectiveContent);
+
+                if (freeWillDelay > 0) {
+                    const timeTaken = Date.now() - startTime;
+                    const targetDelayMs = freeWillDelay * 1000;
+                    if (targetDelayMs > timeTaken) {
+                        await new Promise(resolve => setTimeout(resolve, targetDelayMs - timeTaken));
+                    }
+                }
 
                 if (reply && reply.trim().length > 0) {
                     try {
