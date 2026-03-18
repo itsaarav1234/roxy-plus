@@ -197,6 +197,7 @@ function initialize(client) {
             // Flags
             let shouldReply = false;
             let freeWillDelay = 0;
+            let isFreeWill = false;
 
             // 1. DM Logic (or Group DM)
             if (!guildId) {
@@ -218,7 +219,6 @@ function initialize(client) {
                 // Server Logic
 
                 // Check Free Will
-                let isFreeWill = false;
                 if (config.freeWillChannels) {
                     const fwItem = config.freeWillChannels.find(x => typeof x === 'object' ? x.id === channelId : x === channelId);
                     if (fwItem) {
@@ -252,29 +252,46 @@ function initialize(client) {
             }
 
             if (shouldReply) {
-                const startTime = Date.now();
-                message.channel.sendTyping().catch(() => { });
-                // Generate
-                // Prepend username for context
-                const effectiveContent = `(User: ${message.author.username}) ${content}`;
-                const reply = await generateReply(authorId, effectiveContent);
+                const processReply = async () => {
+                    const startTime = Date.now();
+                    message.channel.sendTyping().catch(() => { });
+                    // Generate
+                    // Prepend username for context
+                    const effectiveContent = `(User: ${message.author.username}) ${content}`;
+                    const reply = await generateReply(authorId, effectiveContent);
 
-                if (freeWillDelay > 0) {
-                    const timeTaken = Date.now() - startTime;
-                    const targetDelayMs = freeWillDelay * 1000;
-                    if (targetDelayMs > timeTaken) {
-                        await new Promise(resolve => setTimeout(resolve, targetDelayMs - timeTaken));
+                    if (freeWillDelay > 0) {
+                        const timeTaken = Date.now() - startTime;
+                        const targetDelayMs = freeWillDelay * 1000;
+                        if (targetDelayMs > timeTaken) {
+                            await new Promise(resolve => setTimeout(resolve, targetDelayMs - timeTaken));
+                        }
                     }
-                }
 
-                if (reply && reply.trim().length > 0) {
-                    try {
-                        await message.reply(reply);
-                    } catch (e) {
-                        // Fallback: If reply fails (e.g. Invalid Form Body), try normal send
-                        // console.warn("[AI] Reply failed, attempting plain send...", e.message);
-                        await message.channel.send(reply).catch(err => console.error("[AI] Failed to send:", err));
+                    if (reply && reply.trim().length > 0) {
+                        try {
+                            await message.reply(reply);
+                        } catch (e) {
+                            // Fallback: If reply fails (e.g. Invalid Form Body), try normal send
+                            // console.warn("[AI] Reply failed, attempting plain send...", e.message);
+                            await message.channel.send(reply).catch(err => console.error("[AI] Failed to send:", err));
+                        }
                     }
+                };
+
+                // Free Will Queue System to prevent API rate limits
+                if (isFreeWill && freeWillDelay > 0) {
+                    if (!client.freeWillQueues) client.freeWillQueues = new Map();
+                    const currentQueue = client.freeWillQueues.get(channelId) || Promise.resolve();
+                    
+                    const nextQueue = currentQueue
+                        .then(() => processReply())
+                        .catch(err => console.error("[AI Queue Error]:", err));
+                        
+                    client.freeWillQueues.set(channelId, nextQueue);
+                } else {
+                    // Normal execution for mentions, whitelisted channels, etc.
+                    processReply().catch(err => console.error("[AI Process Error]:", err));
                 }
             }
         } catch (error) {
