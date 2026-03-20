@@ -235,9 +235,16 @@ client.on('guildMemberAdd', async member => {
         if (setup && setup.channelId) {
             const channel = member.guild.channels.cache.get(setup.channelId);
             if (channel) {
-                const { createCanvas, loadImage } = require('canvas');
-                const fs = require('fs');
-                const path = require('path');
+                if (setup.welcomeType === 'text') {
+                    let txt = setup.textMessage || 'hey {user} welcome to the {server} you are {count} member';
+                    txt = txt.replace(/{user}/g, `<@${member.user.id}>`);
+                    txt = txt.replace(/{server}/g, member.guild.name || 'Server');
+                    txt = txt.replace(/{count}/g, member.guild.memberCount || 1);
+                    await channel.send(txt);
+                } else {
+                    const { createCanvas, loadImage } = require('canvas');
+                    const fs = require('fs');
+                    const path = require('path');
 
                 // Find custom wallpaper in data folder
                 const dataDir = path.join(__dirname, 'data');
@@ -272,25 +279,30 @@ client.on('guildMemberAdd', async member => {
                 }
 
                 // Set Color based on user setup or default white
-                let userColor = (setup.textcolor && setup.textcolor !== 'ffffff') ? `#${setup.textcolor}` : '#ffffff';
-                if (!userColor.startsWith('#')) userColor = '#' + userColor;
+                let userColor = setup.textcolor || '#ffffff';
+                if (/^[0-9A-Fa-f]{6}$/.test(userColor)) userColor = '#' + userColor;
 
                 ctx.textAlign = 'center';
 
-                // "WELCOME TO"
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 36px Arial';
-                ctx.fillText(`WELCOME TO ${cleanGuild.toUpperCase()}`, canvas.width / 2, 290);
-
-                // Username
-                ctx.font = 'bold 50px Arial';
-                ctx.fillStyle = userColor;
-                ctx.fillText(cleanUser, canvas.width / 2, 350);
-
-                // Member count
-                ctx.font = '24px Arial';
-                ctx.fillStyle = '#cccccc';
-                ctx.fillText(`Member #${member.guild.memberCount}`, canvas.width / 2, 395);
+                const lines = (setup.cardMessage || "WELCOME TO {server}\n{user}\nMember #{count}").split('\n');
+                let startY = 290;
+                
+                lines.forEach((line) => {
+                    let parsedLine = line.replace(/{server}/gi, cleanGuild)
+                                         .replace(/{user}/gi, cleanUser)
+                                         .replace(/{count}/gi, member.guild.memberCount.toString());
+                    
+                    if (line.toLowerCase().includes('{user}')) {
+                        ctx.font = 'bold 50px Arial';
+                        ctx.fillStyle = userColor;
+                        startY += 10;
+                    } else {
+                        ctx.font = 'bold 36px Arial';
+                        ctx.fillStyle = '#ffffff';
+                    }
+                    ctx.fillText(parsedLine, canvas.width / 2, startY);
+                    startY += 45;
+                });
 
                 // Draw Avatar Circular Cutout
                 const userAvatar = member.user.displayAvatarURL({ format: 'png', size: 256 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
@@ -324,6 +336,7 @@ client.on('guildMemberAdd', async member => {
                         name: 'welcome.png'
                     }]
                 });
+                }
             }
         }
     } catch (e) {

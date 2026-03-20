@@ -468,9 +468,11 @@ module.exports = (client) => {
         });
         const enrichedGroups = [...enrichedGroupsAlways, ...enrichedGroupsMention];
 
-        const enrichedFreeWill = (data.freeWillChannels || []).map(id => {
+        const enrichedFreeWill = (data.freeWillChannels || []).map(item => {
+            const id = typeof item === 'object' ? item.id : item;
+            const delay = typeof item === 'object' ? item.delay : 0;
             const c = client.channels.cache.get(id);
-            return { id, name: c ? c.name : 'Unknown Channel', guildName: c?.guild?.name || 'Unknown', guildIcon: c?.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png' };
+            return { id, delay, name: c ? c.name : 'Unknown Channel', guildName: c?.guild?.name || 'Unknown', guildIcon: c?.guild?.iconURL({ dynamic: true }) || 'https://cdn.discordapp.com/embed/avatars/0.png' };
         });
         const enrichedUsers = (data.dmUsers || []).map(id => {
             const u = client.users.cache.get(id); // Users might not be cached if not seen?
@@ -757,21 +759,38 @@ module.exports = (client) => {
                 channelName: channelName,
                 template: val.template,
                 background: val.background,
-                textcolor: val.textcolor
+                textcolor: val.textcolor,
+                welcomeType: val.welcomeType || 'card',
+                textMessage: val.textMessage || 'hey {user} welcome to the {server} you are {count} member',
+                cardMessage: val.cardMessage || 'WELCOME TO {server}\n{user}\nMember #{count}'
             });
         }
-        res.json({ setups: enrichedList });
+        const config = data.config || { textcolor: 'white', welcomeType: 'card', textMessage: 'hey {user} welcome to the {server} you are {count} member', cardMessage: 'WELCOME TO {server}\n{user}\nMember #{count}' };
+        res.json({ setups: enrichedList, config });
     });
 
     app.post('/api/welcomer', (req, res) => {
         const welcomerManager = require('../commands/welcomerManager');
-        const { action, guildId, channelId, template, background, textcolor } = req.body;
+        const { action, guildId, channelId, template, background, textcolor, welcomeType, textMessage, cardMessage } = req.body;
 
         try {
             if (action === 'add') {
-                welcomerManager.addSetup(guildId, channelId, template, background, textcolor);
+                welcomerManager.addSetup(guildId, channelId, template, background, textcolor, welcomeType, textMessage, cardMessage);
             } else if (action === 'remove') {
                 welcomerManager.removeSetup(guildId);
+            } else if (action === 'saveConfig') {
+                const data = welcomerManager.loadData();
+                data.config = { textcolor, welcomeType, textMessage, cardMessage };
+                
+                // Update all existing setups automatically
+                if (!data.welcomeSetups) data.welcomeSetups = {};
+                for (let gid of Object.keys(data.welcomeSetups)) {
+                    data.welcomeSetups[gid].textcolor = textcolor;
+                    data.welcomeSetups[gid].welcomeType = welcomeType;
+                    data.welcomeSetups[gid].textMessage = textMessage;
+                    data.welcomeSetups[gid].cardMessage = cardMessage;
+                }
+                welcomerManager.saveData(data);
             }
             res.json({ success: true });
         } catch (e) {

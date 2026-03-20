@@ -151,6 +151,9 @@ async function generateReply(userId, userContent) {
 
         console.log(`\n[AI] Reply complete (Model: ${config.modelType}).`);
 
+        // Strip out <think> blocks if the model returns them in the main content chunk
+        fullContent = fullContent.replace(/<think>[\s\S]*?(?:<\/think>|$)\s*/gi, '');
+
         // Save to history
         if (fullContent.trim()) {
             await addHistory(userId, userContent, fullContent);
@@ -193,6 +196,8 @@ function initialize(client) {
 
             // Flags
             let shouldReply = false;
+            let freeWillDelay = 0;
+            let isFreeWill = false;
 
             // 1. DM Logic (or Group DM)
             if (!guildId) {
@@ -214,11 +219,17 @@ function initialize(client) {
                 // Server Logic
 
                 // Check Free Will
-                if (config.freeWillChannels && config.freeWillChannels.includes(channelId)) {
-                    shouldReply = true;
+                if (config.freeWillChannels) {
+                    const fwItem = config.freeWillChannels.find(x => typeof x === 'object' ? x.id === channelId : x === channelId);
+                    if (fwItem) {
+                        shouldReply = true;
+                        isFreeWill = true;
+                        freeWillDelay = typeof fwItem === 'object' ? (fwItem.delay || 0) : 0;
+                    }
                 }
+                
                 // Check Mention/Reply triggers
-                else {
+                if (!isFreeWill) {
                     const isMentioned = message.mentions.users.has(client.user.id);
                     // Reply logic could be added here if needed
 
@@ -241,20 +252,46 @@ function initialize(client) {
             }
 
             if (shouldReply) {
-                message.channel.sendTyping().catch(() => { });
-                // Generate
-                // Prepend username for context
-                const effectiveContent = `(User: ${message.author.username}) ${content}`;
-                const reply = await generateReply(authorId, effectiveContent);
+                const processReply = async () => {
+                    const startTime = Date.now();
+                    message.channel.sendTyping().catch(() => { });
+                    // Generate
+                    // Prepend username for context
+                    const effectiveContent = `(User: ${message.author.username}) ${content}`;
+                    const reply = await generateReply(authorId, effectiveContent);
 
-                if (reply && reply.trim().length > 0) {
-                    try {
-                        await message.reply(reply);
-                    } catch (e) {
-                        // Fallback: If reply fails (e.g. Invalid Form Body), try normal send
-                        // console.warn("[AI] Reply failed, attempting plain send...", e.message);
-                        await message.channel.send(reply).catch(err => console.error("[AI] Failed to send:", err));
+                    if (freeWillDelay > 0) {
+                        const timeTaken = Date.now() - startTime;
+                        const targetDelayMs = freeWillDelay * 1000;
+                        if (targetDelayMs > timeTaken) {
+                            await new Promise(resolve => setTimeout(resolve, targetDelayMs - timeTaken));
+                        }
                     }
+
+                    if (reply && reply.trim().length > 0) {
+                        try {
+                            await message.reply(reply);
+                        } catch (e) {
+                            // Fallback: If reply fails (e.g. Invalid Form Body), try normal send
+                            // console.warn("[AI] Reply failed, attempting plain send...", e.message);
+                            await message.channel.send(reply).catch(err => console.error("[AI] Failed to send:", err));
+                        }
+                    }
+                };
+
+                // Free Will Queue System to prevent API rate limits
+                if (isFreeWill && freeWillDelay > 0) {
+                    if (!client.freeWillQueues) client.freeWillQueues = new Map();
+                    const currentQueue = client.freeWillQueues.get(channelId) || Promise.resolve();
+                    
+                    const nextQueue = currentQueue
+                        .then(() => processReply())
+                        .catch(err => console.error("[AI Queue Error]:", err));
+                        
+                    client.freeWillQueues.set(channelId, nextQueue);
+                } else {
+                    // Normal execution for mentions, whitelisted channels, etc.
+                    processReply().catch(err => console.error("[AI Process Error]:", err));
                 }
             }
         } catch (error) {

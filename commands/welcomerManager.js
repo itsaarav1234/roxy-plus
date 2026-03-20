@@ -19,9 +19,9 @@ function saveData(data) {
     fs.writeFileSync(dataFile, JSON.stringify(data, null, 2));
 }
 
-function addSetup(guildId, channelId, template, background, textcolor) {
+function addSetup(guildId, channelId, template, background, textcolor, welcomeType = 'card', textMessage, cardMessage) {
     const data = loadData();
-    data.welcomeSetups[guildId] = { channelId, template, background, textcolor };
+    data.welcomeSetups[guildId] = { channelId, template, background, textcolor, welcomeType, textMessage, cardMessage };
     saveData(data);
 }
 

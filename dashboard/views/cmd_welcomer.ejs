@@ -319,7 +319,26 @@
             <!-- Setup Form & Preview -->
             <div class="section-card">
                 <div class="section-title">Welcome Preview Options</div>
-                <div class="form-grid">
+
+                <div class="input-group full-width" style="margin-bottom: 25px;">
+                    <label class="input-label">Welcome Type</label>
+                    <select id="welcomeType" class="input-field" onchange="toggleWelcomeType()">
+                        <option value="card">Card Welcome (Image)</option>
+                        <option value="text">Text Welcome</option>
+                    </select>
+                </div>
+
+                <!-- CARD SETUP -->
+                <div id="cardSetupSection" class="form-grid">
+                    <div class="input-group full-width">
+                        <label class="input-label">Image Card Text</label>
+                        <textarea id="cardMessage" class="input-field"
+                            style="min-height: 80px; resize: vertical; padding: 12px; font-family: inherit;">WELCOME TO {server}&#10;{user}&#10;Member #{count}</textarea>
+                        <p style="color:#aaa; font-size: 0.85rem; margin-top: 10px;">
+                            <b>Placeholders:</b> {user}, {server}, {count}. Use new lines to create new line in card
+                        </p>
+                    </div>
+
                     <div class="input-group full-width">
                         <label class="input-label">Username Font Color</label>
                         <select id="wTextColor" class="input-field"
@@ -341,6 +360,23 @@
                         </p>
                     </div>
                 </div>
+
+                <!-- TEXT SETUP -->
+                <div id="textSetupSection" class="form-grid" style="display: none;">
+                    <div class="input-group full-width">
+                        <label class="input-label">Custom Text Message</label>
+                        <textarea id="textMessage" class="input-field"
+                            style="min-height: 100px; resize: vertical; padding: 12px; font-family: inherit;">hey {user} welcome to the {server} you are {count} member</textarea>
+                        <p style="color:#aaa; font-size: 0.85rem; margin-top: 10px;">
+                            <b>Placeholders:</b> {user} (pings the user), {server} (server name), {count} (member count)
+                        </p>
+                    </div>
+                </div>
+
+                <button id="btnSaveConfig" onclick="saveGlobalConfig()"
+                    style="width: 100%; padding: 15px; font-size: 1.1rem; font-weight: 700; background: linear-gradient(90deg, #8a2be2, #6c5ce7); border: none; border-radius: 12px; color: #fff; cursor: pointer; transition: 0.3s; margin-top: 15px; box-shadow: 0 5px 20px rgba(138, 43, 226, 0.3);">
+                    Save Changes
+                </button>
             </div>
 
             <!-- Whitelisted Channels / Add Logic -->
@@ -375,8 +411,28 @@
                     const res = await fetch('/api/welcomer');
                     const data = await res.json();
                     currentSetups = data.setups || [];
+
+                    if (data.config) {
+                        document.getElementById('wTextColor').value = data.config.textcolor || 'white';
+                        document.getElementById('welcomeType').value = data.config.welcomeType || 'card';
+                        document.getElementById('textMessage').value = data.config.textMessage || 'hey {user} welcome to the {server} you are {count} member';
+                        document.getElementById('cardMessage').value = data.config.cardMessage || 'WELCOME TO {server}\n{user}\nMember #{count}';
+                        toggleWelcomeType();
+                    }
+
                     render();
                 } catch (e) { console.error(e); }
+            }
+
+            function toggleWelcomeType() {
+                const type = document.getElementById('welcomeType').value;
+                if (type === 'text') {
+                    document.getElementById('cardSetupSection').style.display = 'none';
+                    document.getElementById('textSetupSection').style.display = 'grid';
+                } else {
+                    document.getElementById('cardSetupSection').style.display = 'grid';
+                    document.getElementById('textSetupSection').style.display = 'none';
+                }
             }
 
             function render() {
@@ -392,7 +448,7 @@
                         <img src="${s.icon}" class="whitelist-icon">
                         <div class="whitelist-info">
                             <div class="whitelist-name">#${s.channelName}</div>
-                            <div class="whitelist-sub">${s.guildName} | Color: ${s.textcolor}</div>
+                            <div class="whitelist-sub">${s.guildName} | Type: ${s.welcomeType === 'text' ? 'TEXT' : 'CARD'}</div>
                         </div>
                         <button class="btn-delete" style="padding:5px 10px;" onclick="removeSetup('${s.guildId}')"><i class="fas fa-trash"></i></button>
                     </div>`;
@@ -466,13 +522,16 @@
                 if (!channelId || !verifiedGuildId) return;
 
                 const textcolor = document.getElementById('wTextColor').value;
+                const welcomeType = document.getElementById('welcomeType').value;
+                const textMessage = document.getElementById('textMessage').value;
+                const cardMessage = document.getElementById('cardMessage').value;
 
                 try {
                     await fetch('/api/welcomer', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            action: 'add', guildId: verifiedGuildId, channelId, template: 'custom', background: 'custom', textcolor
+                            action: 'add', guildId: verifiedGuildId, channelId, template: 'custom', background: 'custom', textcolor, welcomeType, textMessage, cardMessage
                         })
                     });
 
@@ -483,6 +542,41 @@
 
                     await loadData();
                 } catch (e) { console.error('Error saving', e); }
+            }
+
+            async function saveGlobalConfig() {
+                const textcolor = document.getElementById('wTextColor').value;
+                const welcomeType = document.getElementById('welcomeType').value;
+                const textMessage = document.getElementById('textMessage').value;
+                const cardMessage = document.getElementById('cardMessage').value;
+                const btn = document.getElementById('btnSaveConfig');
+
+                const origText = btn.innerText;
+                const origBg = btn.style.background;
+                btn.innerText = "Saving...";
+                btn.disabled = true;
+
+                try {
+                    await fetch('/api/welcomer', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'saveConfig', textcolor, welcomeType, textMessage, cardMessage
+                        })
+                    });
+                    await loadData();
+                    btn.innerText = "Saved!";
+                    btn.style.background = "linear-gradient(90deg, #2ecc71, #27ae60)";
+                } catch (e) {
+                    console.error('Error saving config', e);
+                    btn.innerText = "Error!";
+                }
+
+                setTimeout(() => {
+                    btn.innerText = origText;
+                    btn.disabled = false;
+                    btn.style.background = origBg;
+                }, 2000);
             }
 
             async function removeSetup(guildId) {
@@ -498,10 +592,6 @@
             }
 
             window.onload = () => {
-                const savedColor = localStorage.getItem('welcomerTextColor');
-                if (savedColor) {
-                    document.getElementById('wTextColor').value = savedColor;
-                }
                 loadData();
             };
         </script>
