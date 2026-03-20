@@ -34,8 +34,7 @@ module.exports = {
 
             let response = '```js\n';
             response += ` Volume: ${vol}%\n`;
-            response += ` [${volumeBar}]\n`;
-            response += '╰──────────────────────────────────╯\n```';
+
 
             await message.channel.send(response);
 
