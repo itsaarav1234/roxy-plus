@@ -104,27 +104,11 @@ module.exports = {
                 return message.channel.send(`\`\`\`Error: ${result.reason}\`\`\``);
             }
 
-            if (result.type === 'queue') {
-                let response = '```\n';
-                response += '╭─[ ADDED TO QUEUE ]─╮\n\n';
-                response += `  Title: ${result.track.info.title}\n`;
-                response += `  Artist: ${result.track.info.author}\n`;
-                response += `  Position: ${client.queueManager.get(message.guild.id).songs.length}\n`;
-                response += '\n╰──────────────────────────────────╯\n```';
-                message.channel.send(response);
-            } else {
-                let response = '```\n';
-                response += '╭─[ NOW PLAYING ]─╮\n\n';
-                response += `  🎵 ${result.track.info.title}\n`;
-                response += `  👤 ${result.track.info.author}\n`;
-                response += `  ⏱️ ${formatDuration(result.track.info.length)}\n`;
-                response += '\n╰──────────────────────────────────╯\n```';
-                message.channel.send(response);
-
-                // Set text channel for queue if new
-                const queue = client.queueManager.get(message.guild.id);
-                if (queue) queue.textChannel = message.channel;
-            }
+if (result.type === 'queue') {
+  return message.channel.send('.');
+} else {
+  return message.channel.send('.');
+}}
 
             if (message.deletable) message.delete().catch(() => { });
 
