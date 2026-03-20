@@ -4,17 +4,19 @@ function createIdentifier(query) {
     return /^(https?:\/\/|www\.)/i.test(query) ? query : `ytsearch:${query}`;
 }
 
-function formatDuration(ms) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
+function createIdentifier(query) {
+  query = query.trim();
 
-    if (hours > 0) {
-        return `${hours}:${String(minutes % 60).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-    }
-    return `${minutes}:${String(seconds % 60).padStart(2, '0')}`;
+  // Discord sometimes sends links wrapped like: <https://...>
+  query = query.replace(/^<(.+)>$/, '$1');
+
+  if (/^(https?:\/\/|www\.)/i.test(query)) return query;
+
+  // also handle links without scheme (rare, but helps)
+  if (/^(youtube\.com\/|youtu\.be\/)/i.test(query)) return `https://${query}`;
+
+  return `ytsearch:${query}`;
 }
-
 async function playLogic(client, guildId, query) {
     const identifier = createIdentifier(query);
     let result;
